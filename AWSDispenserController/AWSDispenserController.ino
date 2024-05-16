@@ -6,8 +6,8 @@
 #include "MQTTManager.h"
 #include "Dispenser.h"
 
-const char * WIFI_SSID = "Denilson_fiesta";
-const char * WIFI_PASS = "Inocente2332";
+const char * WIFI_SSID = "UCB-PREMIUM";
+const char * WIFI_PASS = "lacatoucb";
 
 const char * MQTT_BROKER_HOST = "a2dmh18tmfqz8b-ats.iot.us-east-2.amazonaws.com";
 const int MQTT_BROKER_PORT = 8883;
@@ -109,20 +109,24 @@ unsigned long previousPublishMillis = 0;
 char outputBuffer[128];
 
 void reportCurrentState(const char * state, float distance){
-  outputDoc["state"]["reported"]["distanceFromGlass"] = 0;
-  outputDoc["state"]["reported"]["pumpState"] = 0;
+  outputDoc["state"]["reported"]["distanceFromGlass"] = distance;
+  outputDoc["state"]["reported"]["pumpState"] = state;
   serializeJson(outputDoc, outputBuffer);
   mqttManager->publish(outputBuffer);
 }
 
 void setPumpState(const char * desiredState){
-  if(strcmp(desiredState, "on")){
-    dispenser->turnOnWaterPump();
-  }else if(strcmp(desiredState, "off")){
+  float distance;
+  if(strcmp(desiredState, "off")){
+    distance = 11;
     dispenser->turnOffWaterPump();
+  }else if(strcmp(desiredState, "on")){
+    distance = 9;
+    dispenser->turnOnWaterPump();
   }else{
     Serial.println("An error has occurred");
   }
+  reportCurrentState(desiredState, distance);
 }
 
 void callback(const char * topic, byte * payload, unsigned int length) {
@@ -135,12 +139,17 @@ void callback(const char * topic, byte * payload, unsigned int length) {
 
     DeserializationError err = deserializeJson(inputDoc, payload);
     if (!err) {
-      String desiredState = inputDoc["state"]["reported"]["pumpState"].as<String>();
+      String desiredState = inputDoc["state"]["pumpState"].as<String>();
       setPumpState(desiredState.c_str());
     }
   }
 }
 
+void connect(){
+  wiFiManager->connect();
+  mqttManager->connect();
+  reportCurrentState("off", 1200);
+}
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -151,9 +160,6 @@ void setup() {
   mqttConfig = new MQTTConfig(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_CLIENT_ID, UPDATE_DELTA_TOPIC, UPDATE_TOPIC, amazonCredentials);
   mqttManager = new MQTTManager(mqttConfig, callback);
 
-  wiFiManager->connect();
-  mqttManager->connect();
-  reportCurrentState("off", -1);
 }
 
 void loop() {
@@ -161,9 +167,9 @@ void loop() {
     unsigned long now = millis();
     if (now - previousPublishMillis >= 2000) {
       previousPublishMillis = now;
-
       float distance = dispenser->readDistanceFromGlass();
-      reportCurrentState("NYA", distance);
+      Serial.println(distance);
+      reportCurrentState(dispenser->getWaterPumpState(), distance);
     }
     mqttManager->loop();
 
@@ -171,6 +177,7 @@ void loop() {
   else {
     Serial.println("MQTT broker not connected!");
     delay(2000);
+    connect();
   }
   
 

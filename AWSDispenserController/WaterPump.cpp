@@ -1,6 +1,7 @@
 #include "WaterPump.h"
 
 WaterPump::WaterPump(byte controlPinA, byte controlPinB): controlPinA(controlPinA), controlPinB(controlPinB){
+  state = "off";
   pinMode(controlPinA, OUTPUT);
   pinMode(controlPinB, OUTPUT);
 }
@@ -18,3 +19,6 @@ void WaterPump::turnOff() {
     digitalWrite(controlPinB, LOW);
 }
 
+const char* WaterPump::getState(){
+  return state;
+}

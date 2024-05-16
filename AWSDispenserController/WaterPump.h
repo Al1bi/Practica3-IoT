@@ -5,6 +5,7 @@
 
 class WaterPump {
 private:
+    const char* state;
     byte controlPinA;
     byte controlPinB;
 
@@ -13,6 +14,7 @@ public:
     ~WaterPump();
     void turnOn();
     void turnOff();
+    const char* getState();
 };
 
 #endif

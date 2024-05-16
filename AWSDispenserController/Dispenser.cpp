@@ -22,3 +22,7 @@ void Dispenser::turnOnWaterPump(){
 void Dispenser::turnOffWaterPump(){
   waterPump->turnOff();
 }
+
+const char* Dispenser::getWaterPumpState(){
+  return waterPump->getState();
+}

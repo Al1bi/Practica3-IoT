@@ -15,6 +15,7 @@ public:
   float readDistanceFromGlass();
   void turnOnWaterPump();
   void turnOffWaterPump();
+  const char* getWaterPumpState();
 };
 
 #endif
